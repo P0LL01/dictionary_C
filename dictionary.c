@@ -3,14 +3,18 @@
 #include <string.h>
 #include <ctype.h>
 
+// Struct to hold letter and its frequency
+struct LetterFrequency {
+    char letter;
+    int count;
+};
 
-void printLejiko(char **, int , int);
-int tsek(char **, int, int, FILE*);
+void printLejiko(char **, int, int);
+int tsek(char **, int, int);
 void Letters(char**, int, int);
-
-int *letterCount(char **,int,FILE*a);
-void bubbleSort(int*,int);
-void swap(int*,int*);
+void letterCount(char **, int, struct LetterFrequency*);
+void bubbleSort(struct LetterFrequency*, int);
+void swap(struct LetterFrequency*, struct LetterFrequency*);
 
 int main(int argc, char *argv[]){
 //	system("chcp 1253");
@@ -50,7 +54,7 @@ int main(int argc, char *argv[]){
 	 	
 	}
 	//Checks the possible errors of the text file 
-	int check=tsek(lejiko,pl,columns,fp);
+	int check=tsek(lejiko,pl,columns);
 	if(check==1){
 		printf("Wrong input! The file has to contain only latin characters and not numbers.\n");
 		return 1;
@@ -68,34 +72,27 @@ int main(int argc, char *argv[]){
 	printLejiko(lejiko,pl,columns);
 	//Prints all the capital legtters of the dictionary
 	Letters(lejiko, pl, columns);
-	for (i = 0; i < pl; i++) {
-        free(lejiko[i]);
-    }
     //makes a counter for each letter of the alphabet and puts them in an array so that latter we can sort them and pick the top 5 most used letters
-    int *array=letterCount(lejiko,pl,fp);
-//    countLetters(fp,array,lejiko,pl);
+    struct LetterFrequency frequencies[26];
+    letterCount(lejiko, pl, frequencies);
     
     // Print the results
     printf("Letter frequencies:\n");
     for (i = 0; i < 26; i++) {
-        printf("%c %07d\n", 'A' + i, array[i]);
+        printf("%c %07d\n", frequencies[i].letter, frequencies[i].count);
     }
     //sorts the array for the frequency of the letters
-    bubbleSort(array,pl);
+    bubbleSort(frequencies, 26);
     //printd the 5 most used letters of the file
     printf("The five most used letters are: \n");
     for(i=0;i<5;i++){
-    	printf("%c %d\n", 'A'+i, array[i]);
+	printf("%c %d\n", frequencies[i].letter, frequencies[i].count);
 	}
-	for(i=0;i<5;i++){
-		for(j=1;j<4;j++){
-			printf("%c%c\n",'A'+i, 'A'+j);	
-		}
-	}
-    free(array);
+
     for(i=0;i<pl;i++){	
     	free(lejiko[i]);
 	}
+	free(lejiko);
 	fclose(fp);
 	
 	return 0;
@@ -112,35 +109,22 @@ void printLejiko(char **lejiko, int pl, int columns){
 	printf("\n");
 }
 
-int tsek(char **lejiko, int pl, int columns, FILE *fp){
-	int i,j; 
+int tsek(char **lejiko, int pl, int columns){
+	int i,j;
 	for(i=0;i<pl;i++){
-		lejiko[i]=(char*)calloc(sizeof(char),columns+1);
-		if (lejiko[i] == NULL) {
-            printf("Memory Problem.\n");
-            return -1;  // Indicate memory allocation failure
-        }
-        	getchar();
-
-		fgets(lejiko[i],columns+1,fp);
 		for(j=0;j<strlen(lejiko[i]);j++){
-			if(lejiko[i][j]=='\n'){
-				lejiko[i][j]='\0';
-			}
 			if(lejiko[i][j]==' '){
-				return 2;	
+				return 2;
 			}
-			if(isalnum(lejiko[i][j])!=0){
+			if(!isalpha(lejiko[i][j])){
 				return 1;
 			}
-			if(lejiko[i][j]!='\0'){
-				if(!((lejiko[i][j]>='A') && (lejiko[i][j]<='Z'))){
+			if(!isupper(lejiko[i][j])){
 				return 3;
 			}
 		}
 	}
 	return 0;
-	}
 }
 
 void Letters(char **lejiko, int pl, int columns){
@@ -154,46 +138,36 @@ void Letters(char **lejiko, int pl, int columns){
 	printf("\n");
 }
 
-int *letterCount(char** lejiko,int pl,FILE *fp){
-	int i;
-	int *array1=(int*)calloc(26,sizeof(int));
-	if(array1==NULL){
-		printf("Memory Problem.\n");
-		exit;
-	}
-	//initializes array to 0
-	printf("The following are letter counters for each of the 26 letters of the alphabet.\n");
-	for(i=0;i<26;i++){
-		array1[i]=0;
-	}
-	int j;
-	for (i = 0; i < pl; i++) {
-         for (j = 0; j < strlen(lejiko[i]); j++) {
-             char ch = (lejiko[i][j]);
+void letterCount(char** lejiko, int pl, struct LetterFrequency* frequencies){
+    int i, j;
+    for(i = 0; i < 26; i++){
+        frequencies[i].letter = 'A' + i;
+        frequencies[i].count = 0;
+    }
 
-             if ('A' <= ch && ch <= 'Z') {
-                 array1[ch - 'A']++;
-             }
-         }
-     }
-//	array=&letterCount;
-	return array1;
+    for (i = 0; i < pl; i++) {
+        for (j = 0; j < strlen(lejiko[i]); j++) {
+            char ch = toupper(lejiko[i][j]);
+            if (ch >= 'A' && ch <= 'Z') {
+                frequencies[ch - 'A'].count++;
+            }
+        }
+    }
 }
 
 
-//a function that swaps the values of two variables, mostly used in the bubbleSort function 
-void swap(int *xp, int *yp) {
-    int temp;
-	temp = *xp;
+//a function that swaps the values of two variables, mostly used in the bubbleSort function
+void swap(struct LetterFrequency *xp, struct LetterFrequency *yp) {
+    struct LetterFrequency temp = *xp;
     *xp = *yp;
     *yp = temp;
 }
 
-//sorts the table that has the letters
-void bubbleSort(int *array, int pl) {
+//sorts the table that has the letters by frequency in descending order
+void bubbleSort(struct LetterFrequency *array, int n) {
     int i,j;
-	for (i = 0; i < pl-1; i++)
-        for (j = 0; j < pl-i-1; j++)
-            if (array[j] > array[j+1])
+    for (i = 0; i < n-1; i++)
+        for (j = 0; j < n-i-1; j++)
+            if (array[j].count < array[j+1].count)
                 swap(&array[j], &array[j+1]);
 }
