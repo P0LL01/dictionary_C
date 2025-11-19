@@ -1,0 +1,1 @@
+This program is part of a school project. It reads a text file containing a specified number of rows and columns of words. After loading the data, it extracts all the letters used, displays them, and calculates the frequency of each letter in the file.
